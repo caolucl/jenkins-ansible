@@ -1,0 +1,78 @@
+---
+- name: Build Docker image and run container on Linux VM
+  hosts: localhost
+  become: yes
+  vars:
+    image_name: my_custom_image:latest
+    container_name: my_container
+    dockerfile_path: Dockerfile  # Path to your Dockerfile on the remote VM
+    context_path:  . # Directory where Dockerfile and related files are located
+    container_ports:
+      - "8080:80"  # Mapping host port 8080 to container port 80
+
+  tasks:
+    - name: Ensure Docker is installed on the VM
+      ansible.builtin.package:
+        name: docker
+        state: present
+
+    - name: Start Docker service if not running
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: yes
+    
+    - name: Stop and remove the Docker container
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        state: absent  # This will stop and remove the container
+
+    - name: Verify if the Docker container is removed
+      shell: "docker ps -a -q -f name={{ container_name }}"
+      register: container_check
+      changed_when: container_check.stdout != ""
+
+    - name: Output result of container removal
+      debug:
+        msg: "Container '{{ container_name }}' has been removed."
+      when: container_check.stdout == ""
+    
+    - name: Remove the Docker image
+      community.docker.docker_image:
+        name: "{{ image_name }}"
+        state: absent  # Ensures the image is removed
+
+    - name: Verify if the Docker image is removed
+      shell: "docker images -q {{ image_name }}"
+      register: image_check
+      changed_when: image_check.stdout != ""
+
+    - name: Output result of image removal
+      debug:
+        msg: "Image '{{ image_name }}' has been removed."
+      when: image_check.stdout == ""
+
+    - name: Build Docker image from context
+      community.docker.docker_image:
+        name: "{{ image_name }}"
+        source: build  # Specify the source as build
+        build:
+          path: "{{ context_path }}"
+          pull: yes  # Pull the base image if needed
+
+    - name: Run Docker container from the built image
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        image: "{{ image_name }}"
+        ports: "{{ container_ports }}"
+        state: started
+        restart_policy: always
+
+    - name: Display running containers
+      community.docker.docker_container_info:
+        name: "{{ container_name }}"
+      register: container_info
+
+    - name: Output container details
+      debug:
+        var: container_info
