@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage("Execute Ansible") {
             steps {
-                ansiblePlaybook credentialsId: 'caolucl-github-ssh',
+                ansiblePlaybook credentialsId: 'lcao-wsl-ubuntu	',
                                  disableHostKeyChecking: true,
                                  installation: 'Ansible',
                                  inventory: 'inventory_file',
