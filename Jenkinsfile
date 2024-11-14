@@ -8,7 +8,7 @@ pipeline {
                                  disableHostKeyChecking: true,
                                  installation: 'Ansible',
                                  inventory: 'inventory_file',
-                                 playbook: 'playbook.yaml'
+                                 playbook: 'install_nginx.yaml'
             }    
         }    
     }
