@@ -12,5 +12,5 @@
         enabled: True
     - name: Deploy static website
       copy:
-        src: index.html # We have define a html page 
+        src: html/index.html # We have define a html page 
         dest: /var/www/html/
